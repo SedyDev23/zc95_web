@@ -23,6 +23,89 @@ zc95_web/
   deploy/install.sh       installer / updater; detects the Linux distro and installs what it needs
   deploy/zc95-web.service systemd service
   deploy/zc95-web.env     settings template (port, scripts folder, optional password)
+  Dockerfile, docker-compose.yml, docker/   run it as a Docker container instead
+```
+
+There are two ways to run it on a server: [in Docker](#running-it-in-docker), or
+[installed directly](#setting-it-up-on-a-linux-server-port-8080) as a systemd service. Use one or the
+other, not both (they'd both want port 8080).
+
+## Running it in Docker
+
+Needs Docker with the compose plugin (`docker compose`). The server must be on the same network as the
+ZC95; the container reaches it through Docker's normal networking, so nothing special is needed.
+
+### Build and start it from this folder
+
+Copy the folder to the server (or `git clone https://github.com/SedyDev23/zc95_web.git`), then in it:
+
+```
+docker compose up -d --build
+```
+
+Browse to `http://<server-ip>:8080/`, enter the ZC95's IP, click **Connect**, then **Save settings**.
+
+### Or use the published image (no build)
+
+Each version tag publishes the image to `ghcr.io/sedydev23/zc95-web`. In `docker-compose.yml`, swap
+`build: .` and `image: zc95-web` for `image: ghcr.io/sedydev23/zc95-web:latest`, then:
+
+```
+docker compose up -d
+```
+
+Or without compose:
+
+```
+docker run -d --name zc95-web --restart unless-stopped -p 8080:8080 -v zc95-data:/data -v zc95-scripts:/scripts ghcr.io/sedydev23/zc95-web:latest
+```
+
+(The first time it's published, GitHub makes the image private. To let servers pull it without logging
+in, open the package on GitHub, then **Package settings** > **Change visibility** > **Public**.)
+
+### Settings and data
+
+| | |
+|---|---|
+| `zc95-data` volume (`/data`) | The saved IP and folder |
+| `zc95-scripts` volume (`/scripts`) | The Lua scripts the Scripts tab can browse. The examples are copied in on first start. |
+| `ZC95_PORT` | Host port (default `8080`) |
+| `ZC95_WEB_PASSWORD` / `ZC95_WEB_USER` | Optional login. Leave the password blank for no login. |
+
+Put the settings in a `.env` file next to `docker-compose.yml`, for example:
+
+```
+ZC95_PORT=8080
+ZC95_WEB_PASSWORD=choose-a-password
+```
+
+To add scripts, use **Add file...** on the Scripts tab, or copy them into the volume:
+
+```
+docker cp my_script.lua zc95-web:/scripts/
+```
+
+To use a host folder for scripts instead of the volume, change the `/scripts` line in
+`docker-compose.yml` to e.g. `./scripts:/scripts`. The container runs as uid 1000, so the folder must be
+writable by it (`chown -R 1000:1000 scripts`).
+
+### Day-to-day
+
+```
+docker compose logs -f              # live log
+docker compose restart              # restart
+docker compose down                 # stop; any running pattern is stopped first
+docker compose up -d --build        # after updating the files
+```
+
+### Docker on Rocky Linux
+
+```
+dnf -y install dnf-plugins-core
+dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+dnf -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+systemctl enable --now docker
+firewall-cmd --permanent --add-port=8080/tcp && firewall-cmd --reload
 ```
 
 ## Setting it up on a Linux server (port 8080)

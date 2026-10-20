@@ -1,0 +1,32 @@
+# ZC95 Web Manager
+#
+#   docker compose up -d --build      build and start (then browse to http://<server-ip>:8080/)
+#   docker compose logs -f            live log
+#   docker compose down               stop (any running pattern is stopped first)
+#
+# Optional settings go in a .env file next to this one, e.g.
+#   ZC95_PORT=8080
+#   ZC95_WEB_PASSWORD=choose-a-password
+services:
+  zc95-web:
+    build: .
+    image: zc95-web
+    # Or use the published image instead of building it:
+    # image: ghcr.io/sedydev23/zc95-web:latest
+    container_name: zc95-web
+    restart: unless-stopped
+    ports:
+      - "${ZC95_PORT:-8080}:8080"
+    environment:
+      ZC95_WEB_USER: ${ZC95_WEB_USER:-zc95}
+      ZC95_WEB_PASSWORD: ${ZC95_WEB_PASSWORD:-}
+    volumes:
+      - zc95-data:/data          # saved IP and folder
+      - zc95-scripts:/scripts    # Lua scripts the Scripts tab can browse
+      # To use a folder on the host for scripts instead, swap the line above for e.g.
+      # - ./scripts:/scripts     (the folder must be writable by uid 1000)
+    stop_grace_period: 10s
+
+volumes:
+  zc95-data:
+  zc95-scripts:

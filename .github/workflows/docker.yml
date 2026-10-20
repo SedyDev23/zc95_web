@@ -1,0 +1,82 @@
+# Builds the Docker image and checks it starts and serves the web page.
+# On a version tag (e.g. v1.0) it also publishes it to the GitHub container registry:
+#   ghcr.io/sedydev23/zc95-web:1.0  and  :latest
+name: Docker image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write   # to publish to ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: zc95-web:test
+
+      - name: Test the container
+        run: |
+          docker run -d --name zc95 -p 8080:8080 zc95-web:test
+          for i in $(seq 1 30); do curl -fs http://localhost:8080/ >/dev/null && break; sleep 1; done
+          echo "--- page";      curl -fs http://localhost:8080/ | grep -q "ZC95 Web Manager"
+          echo "--- settings";  curl -fs http://localhost:8080/api/settings
+          echo; echo "--- folders"; curl -fs "http://localhost:8080/api/folders?path=examples"
+          echo; echo "--- outside the scripts root is refused"
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8080/api/folders?path=../..')" = "400"
+          echo "--- save settings (writes to the /data volume)"
+          curl -fs -X POST -H "Content-Type: application/json" -d '{"ip":"","scripts_dir":"examples"}' http://localhost:8080/api/settings
+          echo; echo "--- healthcheck";  docker exec zc95 python /app/healthcheck.py
+          echo "--- runs as";       docker exec zc95 id
+          echo "--- stops cleanly"; docker stop -t 10 zc95
+          docker logs zc95
+
+      - name: Test with a password
+        run: |
+          docker run -d --name zc95pw -p 8081:8080 -e ZC95_WEB_PASSWORD=secret zc95-web:test
+          for i in $(seq 1 30); do curl -s http://localhost:8081/ >/dev/null && break; sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/)" = "401"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -u zc95:secret http://localhost:8081/)" = "200"
+          docker exec zc95pw python /app/healthcheck.py
+          docker rm -f zc95pw
+
+      - name: Image name and tags
+        if: github.ref_type == 'tag'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/zc95-web
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - name: Log in to ghcr.io
+        if: github.ref_type == 'tag'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish
+        if: github.ref_type == 'tag'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

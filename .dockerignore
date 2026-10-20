@@ -1,0 +1,16 @@
+.git
+.github
+.gitignore
+.gitattributes
+.dockerignore
+Dockerfile
+docker-compose.yml
+.env
+deploy
+data
+**/__pycache__
+**/*.pyc
+*.md
+# Only scripts/examples is copied into the image
+scripts/*
+!scripts/examples
