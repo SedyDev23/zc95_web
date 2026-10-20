@@ -20,16 +20,35 @@ zc95_web/
   lib/                    ZcAsync.py + WebHub.py (from remote_access)
   static/                 index.html, app.css, app.js (the web page)
   scripts/examples/       example Lua scripts (copied to the server's scripts folder on first install)
-  deploy/install.sh       installer / updater for Rocky/Alma/RHEL or Debian/Ubuntu
+  deploy/install.sh       installer / updater; detects the Linux distro and installs what it needs
   deploy/zc95-web.service systemd service
   deploy/zc95-web.env     settings template (port, scripts folder, optional password)
 ```
 
 ## Setting it up on a Linux server (port 8080)
 
-Works on **Rocky Linux / AlmaLinux / RHEL 8 or 9** and on Debian 11+ / Ubuntu 22.04+, including in a
-Proxmox LXC. The installer works out which one it's on. The server must be able to reach the ZC95's IP
-on port 80, so it needs to be on the same network.
+The installer reads `/etc/os-release` to work out which Linux it's on, then installs the prerequisites
+with that system's package manager:
+
+| Distro | Package manager | Python it installs |
+|---|---|---|
+| Rocky, AlmaLinux, RHEL, Oracle Linux, CentOS Stream 8+ | `dnf` | `python3.12`, else `python3.11`, else `python3` |
+| Fedora | `dnf` | `python3` |
+| Debian 11+, Ubuntu 22.04+, Raspberry Pi OS, Mint | `apt` | `python3` + `python3-venv` |
+| openSUSE Leap / Tumbleweed, SLES | `zypper` | `python312`, else `python311`, else `python3` |
+| Arch, Manjaro | `pacman` | `python` |
+
+It also installs `rsync` and `git`. It needs systemd, which Proxmox LXC containers have. It stops with a
+clear message on systems it can't handle, such as CentOS 7 or Alpine, or where only Python older than 3.9
+is available, such as Ubuntu 20.04.
+
+To see what it detects and would install, without changing anything:
+
+```
+bash /root/zc95_web/deploy/install.sh --check
+```
+
+The server must be able to reach the ZC95's IP on port 80, so it needs to be on the same network.
 
 ### 1. Copy the folder to the server
 
@@ -47,10 +66,8 @@ ssh root@SERVER "bash /root/zc95_web/deploy/install.sh"
 
 The installer:
 
-- installs Python and `rsync`:
-  - **Rocky/RHEL** (`dnf`): `python3.12`, or `python3.11` if 3.12 isn't available. The stock `python3` is
-    too old on Rocky 8 (3.6), and Python 3.9 or newer is needed.
-  - **Debian/Ubuntu** (`apt`): `python3` and `python3-venv`.
+- installs Python 3.9+, `rsync` and `git` for your distro (see the table above). On Rocky it prefers
+  `python3.12`, because the stock `python3` is too old on Rocky 8 (3.6).
 - creates a `zc95web` system user
 - copies the app to `/opt/zc95-web` and installs the Python packages into `/opt/zc95-web/venv`
 - creates `/etc/zc95-web/zc95-web.env` (port **8080**) the first time only
