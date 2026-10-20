@@ -282,12 +282,17 @@
     for (const btn of scriptButtons) btn.disabled = busy;
   }
 
+  // The ZC95 names an empty Lua slot "<empty>" (or leaves the name blank)
+  const slotIsEmpty = (script) => !script.Name || script.Name.trim().toLowerCase() === "<empty>";
+
   function showRemote(scripts) {
-    fillList(remoteListEl, scripts.map((script) => {
+    // The ZC95 sends the slots 4 down to 0; list them 0 to 4
+    const sorted = [...scripts].sort((a, b) => a.Index - b.Index);
+    fillList(remoteListEl, sorted.map((script) => {
       const li = document.createElement("li");
-      li.textContent = script.Index + " - " + (script.Name || "(empty)");
+      li.textContent = script.Index + " - " + (script.Name || "<empty>");
       li.dataset.index = script.Index;
-      if (!script.Name) li.classList.add("empty-slot");
+      if (slotIsEmpty(script)) li.classList.add("empty-slot");
       // Clicking a slot picks it as the upload target (and the slot Delete acts on)
       return selectable(remoteListEl, li, () => {
         selectedSlot = script.Index;
