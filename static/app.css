@@ -1,11 +1,11 @@
-/* Palette from remote_access/web_static/app.css */
+/* Palette from remote_access/web_static/app.css, with a red accent */
 :root {
   --bg: #14151a;
   --bg-elevated: #1f2129;
   --text: #f0f0f2;
   --text-muted: #9a9ba6;
   --border: #33333f;
-  --accent: #c62b6b;
+  --accent: #d32f2f;
   --accent-text: #ffffff;
   --danger: #b3261e;
   --ok: #3ba55c;
@@ -13,7 +13,7 @@
   --actual-power: #ffd23f;
   --max-power: #4d7cf0;
   --limit: #3ba55c;
-  --select: rgba(198, 43, 107, 0.22);
+  --select: rgba(211, 47, 47, 0.22);
   color-scheme: dark;
 }
 
@@ -30,7 +30,7 @@
     --actual-power: #d6a600;
     --max-power: #3b63c2;
     --limit: #2e7d43;
-    --select: rgba(198, 43, 107, 0.12);
+    --select: rgba(211, 47, 47, 0.12);
     color-scheme: light;
   }
 }
@@ -47,7 +47,7 @@
   --actual-power: #d6a600;
   --max-power: #3b63c2;
   --limit: #2e7d43;
-  --select: rgba(198, 43, 107, 0.12);
+  --select: rgba(211, 47, 47, 0.12);
   color-scheme: light;
 }
 
@@ -340,6 +340,14 @@ input:focus, select:focus, button:focus-visible {
 .pick-list li.selected.empty-slot { color: var(--accent-text); }
 .pick-list .placeholder { color: var(--text-muted); cursor: default; }
 .pick-list .placeholder:hover { background: none; }
+
+.hint {
+  margin: -4px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.upload-row .hint { margin: 0; }
 
 .upload-row progress { flex: 1; min-width: 120px; height: 10px; accent-color: var(--accent); }
 
