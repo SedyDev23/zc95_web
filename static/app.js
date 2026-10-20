@@ -208,8 +208,9 @@
         li.textContent = name;
         li.dataset.name = name;
         li.addEventListener("dblclick", upload);
-        return selectable(listEl, li);
+        return selectable(listEl, li, updateUploadButton);
       }), "No .lua files in this folder");
+      updateUploadButton();
       if (!quiet) log("Found " + localScripts.length + " .lua script(s) in /" + data.path);
     } catch (e) {
       fillList(listEl, [], "Couldn't read folder");
@@ -274,6 +275,7 @@
   // ---------- scripts on the ZC95 ----------
 
   const remoteListEl = $("remote-list");
+  let selectedSlot = null;   // ZC95 slot (0-4) chosen in the list, for upload and delete
   const scriptButtons = [$("upload-btn"), $("refresh-btn"), $("delete-btn")];
 
   function setBusy(busy) {
@@ -286,9 +288,28 @@
       li.textContent = script.Index + " - " + (script.Name || "(empty)");
       li.dataset.index = script.Index;
       if (!script.Name) li.classList.add("empty-slot");
-      // Selecting a slot here also picks it as the upload target
-      return selectable(remoteListEl, li, () => { $("slot-select").value = String(script.Index); });
+      // Clicking a slot picks it as the upload target (and the slot Delete acts on)
+      return selectable(remoteListEl, li, () => {
+        selectedSlot = script.Index;
+        updateUploadButton();
+      });
     }), "Not loaded");
+
+    // Keep the chosen slot highlighted after the list reloads
+    for (const li of remoteListEl.children) {
+      li.classList.toggle("selected", li.dataset.index === String(selectedSlot));
+    }
+    updateUploadButton();
+  }
+
+  // The button says what will happen, e.g. "Upload fire.lua to slot 2"
+  function updateUploadButton() {
+    const item = selectedItem($("local-list"));
+    const name = item && item.dataset.name;
+    const button = $("upload-btn");
+    if (name && selectedSlot !== null) button.textContent = "Upload " + name + " to slot " + selectedSlot;
+    else if (name) button.textContent = "Upload " + name + " to…";
+    else button.textContent = "Upload";
   }
 
   async function refreshRemote() {
@@ -305,7 +326,8 @@
   async function upload() {
     const item = selectedItem($("local-list"));
     if (!item || !item.dataset.name) { log("Select a script to upload", "error"); return; }
-    const slot = parseInt($("slot-select").value, 10);
+    if (selectedSlot === null) { log("Select the index position on the right to upload the script to", "error"); return; }
+    const slot = selectedSlot;
     log("Uploading " + item.dataset.name + " to slot " + slot + "…");
     setBusy(true);
     try {

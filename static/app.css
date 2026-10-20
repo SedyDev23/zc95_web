@@ -242,7 +242,6 @@ input[type="text"], select {
 
 #ip-input { width: 200px; }
 #pattern-select { flex: 1; min-width: 0; }
-.slot-select { width: 70px; }
 
 input:focus, select:focus, button:focus-visible {
   outline: 2px solid var(--accent);

@@ -59,11 +59,6 @@
           <ul id="local-list" class="pick-list" aria-label="Local scripts"></ul>
           <p class="hint">Select a script to upload</p>
           <div class="row wrap upload-row">
-            <label for="slot-select" class="inline-label">Slot</label>
-            <select id="slot-select" class="slot-select">
-              <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
-            </select>
-            <span class="hint">Select the index position to upload the script.</span>
             <button id="upload-btn" class="btn btn-primary">Upload</button>
             <progress id="upload-progress" max="1" value="0"></progress>
           </div>
@@ -72,6 +67,7 @@
         <section class="col">
           <h2>Scripts on ZC95</h2>
           <ul id="remote-list" class="pick-list" aria-label="Scripts on ZC95"></ul>
+          <p class="hint">Select the index position to upload the script to</p>
           <div class="row">
             <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
             <button id="delete-btn" class="btn btn-secondary">Delete slot</button>
