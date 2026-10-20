@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ZC95 Manager</title>
+  <link rel="stylesheet" href="app.css">
+  <script>
+    // Apply a stored theme before first paint, to avoid a flash of the wrong theme
+    try { const t = localStorage.getItem("zc95-theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+  </script>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>ZC95</h1>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-view="scripts" role="tab">Scripts</button>
+        <button class="tab" data-view="control" role="tab">Control</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <span id="status" class="status status-connecting"><span class="dot"></span><span id="status-text">connecting&hellip;</span></span>
+      <button id="theme-toggle" class="btn-icon" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="settings-bar">
+      <div class="row wrap">
+        <label for="ip-input" class="inline-label">ZC95 IP</label>
+        <input id="ip-input" type="text" placeholder="e.g. 192.168.1.137" autocomplete="off" spellcheck="false">
+        <button id="connect-btn" class="btn btn-secondary">Connect</button>
+        <span class="spacer"></span>
+        <button id="save-settings-btn" class="btn btn-secondary">Save settings</button>
+      </div>
+    </section>
+
+    <!-- ===== Scripts view ===== -->
+    <div id="view-scripts" class="view">
+      <section>
+        <label>Scripts folder on the server</label>
+        <div class="row wrap">
+          <code id="folder-path" class="folder-path">/</code>
+          <span class="spacer"></span>
+          <button id="browse-btn" class="btn btn-secondary">Browse&hellip;</button>
+          <button id="read-btn" class="btn btn-primary">Read</button>
+        </div>
+      </section>
+
+      <div class="columns">
+        <section class="col">
+          <div class="row row-space-between">
+            <h2>Local scripts</h2>
+            <label class="btn btn-link file-label" title="Copy a .lua file from this device into the folder on the server">
+              Add file&hellip;<input id="add-file-input" type="file" accept=".lua" multiple hidden>
+            </label>
+          </div>
+          <ul id="local-list" class="pick-list" aria-label="Local scripts"></ul>
+          <div class="row wrap upload-row">
+            <label for="slot-select" class="inline-label">Slot</label>
+            <select id="slot-select" class="slot-select">
+              <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
+            </select>
+            <button id="upload-btn" class="btn btn-primary">Upload</button>
+            <progress id="upload-progress" max="1" value="0"></progress>
+          </div>
+        </section>
+
+        <section class="col">
+          <h2>Scripts on ZC95</h2>
+          <ul id="remote-list" class="pick-list" aria-label="Scripts on ZC95"></ul>
+          <div class="row">
+            <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
+            <button id="delete-btn" class="btn btn-secondary">Delete slot</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== Control view (the webgui.py remote) ===== -->
+    <div id="view-control" class="view" hidden>
+      <section id="pattern-picker">
+        <label for="pattern-select">Pattern</label>
+        <div class="row">
+          <select id="pattern-select"></select>
+          <button id="start-btn" class="btn btn-primary">Start</button>
+          <button id="reload-patterns-btn" class="btn btn-secondary" title="Reload the pattern list">&#x21bb;</button>
+        </div>
+      </section>
+
+      <section id="pattern-running" hidden>
+        <div class="row row-space-between">
+          <div class="row wrap">
+            <h2 id="pattern-name"></h2>
+            <span id="triphase-badge" class="badge-warning" title="Uses triphase - channel isolation is disabled" hidden>(!) triphase</span>
+          </div>
+          <button id="stop-btn" class="btn btn-danger">Stop</button>
+        </div>
+
+        <div id="soft-button-row" class="row" hidden>
+          <button id="soft-button" class="btn btn-secondary btn-hold">Soft button</button>
+        </div>
+
+        <div class="columns control-columns">
+          <div class="col">
+            <h3>Pattern settings</h3>
+            <div id="menu-items"></div>
+          </div>
+          <div class="col">
+            <h3>Channel power</h3>
+            <div id="channels" class="channels"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section id="log-section">
+      <div class="row row-space-between">
+        <h3>Log</h3>
+        <button id="log-clear" class="btn btn-link">Clear</button>
+      </div>
+      <div id="log"></div>
+    </section>
+  </main>
+
+  <!-- Folder picker -->
+  <dialog id="folder-dialog">
+    <h2>Choose scripts folder</h2>
+    <div class="row">
+      <button id="folder-up" class="btn btn-secondary btn-small">&uarr; Up</button>
+      <code id="folder-dialog-path" class="folder-path"></code>
+    </div>
+    <ul id="folder-list" class="pick-list folder-list"></ul>
+    <p class="muted" id="folder-dialog-info"></p>
+    <div class="row row-end">
+      <button id="folder-cancel" class="btn btn-secondary">Cancel</button>
+      <button id="folder-choose" class="btn btn-primary">Use this folder</button>
+    </div>
+  </dialog>
+
+  <template id="tmpl-min-max">
+    <div class="menu-item menu-item-min-max">
+      <div class="row row-space-between">
+        <span class="menu-title"></span>
+        <span class="menu-value"></span>
+      </div>
+      <div class="row menu-slider-row">
+        <button class="btn btn-step btn-dec">&minus;</button>
+        <input type="range" class="menu-slider">
+        <button class="btn btn-step btn-inc">&plus;</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tmpl-multi-choice">
+    <div class="menu-item menu-item-multi-choice">
+      <span class="menu-title"></span>
+      <div class="choice-group"></div>
+    </div>
+  </template>
+
+  <template id="tmpl-channel">
+    <div class="channel">
+      <div class="row row-space-between">
+        <span class="channel-label"></span>
+        <span class="channel-percent">0%</span>
+      </div>
+      <div class="channel-bar">
+        <div class="channel-bar-max"></div>
+        <div class="channel-bar-actual"></div>
+        <div class="channel-bar-limit"></div>
+      </div>
+      <div class="row channel-slider-row">
+        <button class="btn btn-step btn-dec">&minus;</button>
+        <input type="range" class="channel-slider" min="0" max="1000" step="10" value="0">
+        <button class="btn btn-step btn-inc">&plus;</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

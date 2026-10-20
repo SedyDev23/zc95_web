@@ -1,0 +1,24 @@
+[Unit]
+Description=ZC95 Web Manager (Lua scripts + remote control)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zc95web
+Group=zc95web
+EnvironmentFile=/etc/zc95-web/zc95-web.env
+WorkingDirectory=/opt/zc95-web
+ExecStart=/opt/zc95-web/venv/bin/python /opt/zc95-web/app.py
+Restart=on-failure
+RestartSec=3
+# Give app.py time to stop a running pattern on shutdown
+TimeoutStopSec=10
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+# Local test runs keep settings here (on the server it's /var/lib/zc95-web)
+data/
