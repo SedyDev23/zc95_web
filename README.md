@@ -1,41 +1,51 @@
 # ZC95 Web Manager
 
-The browser version of the ZC95 Lua Manager. It runs on a Linux server and you use it from any browser
-on your network (PC, phone, tablet):
+![ZC95 Web Manager, Scripts tab in dark mode](images/dark-scripts.jpg)
 
-- **Scripts** tab (opens by default): choose a folder of `.lua` files **on the server**, upload a script to
-  ZC95 slot 0-4, list / delete the scripts on the ZC95, and copy `.lua` files from your device to the server.
-- **Control** tab: start a pattern and drive it (menu options, soft button, channel power), the same as
-  `remote_access/webgui.py`. Several browsers can be open at once and stay in sync.
+ZC95 Web Manager is the browser version of the [ZC95 Lua Manager](https://github.com/SedyDev23/zc95_app),
+for managing and controlling a [ZC95](https://github.com/CrashOverride85/zc95) over WiFi. It runs on a
+Linux server (installed directly or in Docker) and you use it from any browser on your network: PC, phone
+or tablet. Keep a folder of Lua scripts on the server, pick one, pick a slot on the box, and click
+**Upload**.
 
-The server keeps one connection to the ZC95 and reconnects automatically. It uses `lib/ZcAsync.py` and
-`lib/WebHub.py` copied unchanged from `zc95_lua/remote_access`.
+The app has two tabs, chosen with the buttons at the top left:
 
-## Files
+- **Scripts** (opens by default): lists the `.lua` scripts in a folder **on the server** alongside the
+  scripts already on the ZC95 (slots 0-4). Select a script and a slot to upload it, or delete a script from
+  a slot. A progress bar shows the upload, and **Add file...** copies `.lua` files from the device you're
+  browsing on to the server.
+- **Control**: start any pattern on the ZC95 and drive it from the browser: change its menu settings, hold
+  its soft button, and set each channel's power, with live bars showing the power and output the box is
+  using. It works like the ZC95's browser remote (`webgui.py`). Several browsers can be open at once and
+  stay in sync.
 
-```
-zc95_web/
-  app.py                  web server (FastAPI)
-  requirements.txt        Python packages
-  lib/                    ZcAsync.py + WebHub.py (from remote_access)
-  static/                 index.html, app.css, app.js (the web page)
-  scripts/examples/       example Lua scripts (copied to the server's scripts folder on first install)
-  deploy/install.sh       installer / updater; detects the Linux distro and installs what it needs
-  deploy/zc95-web.service systemd service
-  deploy/zc95-web.env     settings template (port, scripts folder, optional password)
-  Dockerfile, docker-compose.yml, docker/   run it as a Docker container instead
-```
+**Choosing a pattern**
+
+![Control tab, choosing a pattern to start](images/dark-list.jpg)
+
+**A pattern running**
+
+![Control tab, pattern settings and channel power while a pattern runs](images/dark-control.jpg)
+
+It also has:
+
+- A connection status indicator. The server keeps one connection to the ZC95 and reconnects automatically.
+- A log pane showing connection messages, errors from the ZC95 and `print()` output from running Lua scripts.
+- Light and dark themes, and saved settings (ZC95 IP address and scripts folder), stored on the server.
+- An optional login password.
+
+## Installation
 
 There are two ways to run it on a server: [in Docker](#running-it-in-docker), or
 [installed directly](#setting-it-up-on-a-linux-server-port-8080) as a systemd service. Use one or the
 other, not both (they'd both want port 8080).
 
-## Running it in Docker
+### Running it in Docker
 
 Needs Docker with the compose plugin (`docker compose`). The server must be on the same network as the
 ZC95; the container reaches it through Docker's normal networking, so nothing special is needed.
 
-### Build and start it from this folder
+#### Build and start it from this folder
 
 Copy the folder to the server (or `git clone https://github.com/SedyDev23/zc95_web.git`), then in it:
 
@@ -45,7 +55,7 @@ docker compose up -d --build
 
 Browse to `http://<server-ip>:8080/`, enter the ZC95's IP, click **Connect**, then **Save settings**.
 
-### Or use the published image (no build)
+#### Or use the published image (no build)
 
 Each version tag publishes the image to `ghcr.io/sedydev23/zc95-web`. In `docker-compose.yml`, swap
 `build: .` and `image: zc95-web` for `image: ghcr.io/sedydev23/zc95-web:latest`, then:
@@ -63,7 +73,7 @@ docker run -d --name zc95-web --restart unless-stopped -p 8080:8080 -v zc95-data
 (The first time it's published, GitHub makes the image private. To let servers pull it without logging
 in, open the package on GitHub, then **Package settings** > **Change visibility** > **Public**.)
 
-### Settings and data
+#### Settings and data
 
 | | |
 |---|---|
@@ -89,7 +99,7 @@ To use a host folder for scripts instead of the volume, change the `/scripts` li
 `docker-compose.yml` to e.g. `./scripts:/scripts`. The container runs as uid 1000, so the folder must be
 writable by it (`chown -R 1000:1000 scripts`).
 
-### Day-to-day
+#### Day-to-day
 
 ```
 docker compose logs -f              # live log
@@ -98,7 +108,7 @@ docker compose down                 # stop; any running pattern is stopped first
 docker compose up -d --build        # after updating the files
 ```
 
-### Docker on Rocky Linux
+#### Docker on Rocky Linux
 
 ```
 dnf -y install dnf-plugins-core
@@ -108,7 +118,7 @@ systemctl enable --now docker
 firewall-cmd --permanent --add-port=8080/tcp && firewall-cmd --reload
 ```
 
-## Setting it up on a Linux server (port 8080)
+### Setting it up on a Linux server (port 8080)
 
 The installer reads `/etc/os-release` to work out which Linux it's on, then installs the prerequisites
 with that system's package manager:
@@ -133,15 +143,15 @@ bash /root/zc95_web/deploy/install.sh --check
 
 The server must be able to reach the ZC95's IP on port 80, so it needs to be on the same network.
 
-### 1. Copy the folder to the server
+#### 1. Copy the folder to the server
 
 From Windows (PowerShell), replacing `SERVER` with the server's IP address:
 
 ```
-scp -r A:\Claude_dev\zc95_web root@SERVER:/root/
+scp -r C:\path\to\zc95_web root@SERVER:/root/
 ```
 
-### 2. Run the installer
+#### 2. Run the installer
 
 ```
 ssh root@SERVER "bash /root/zc95_web/deploy/install.sh"
@@ -161,14 +171,14 @@ The installer:
 
 When it finishes, it prints the address, e.g. `http://192.168.0.160:8080/`.
 
-### 3. First use
+#### 3. First use
 
 1. Browse to `http://SERVER:8080/`.
 2. Type the ZC95's IP address and click **Connect**. The status at the top right turns green.
 3. Click **Browse...** to choose a folder under `/var/lib/zc95-web/scripts`, then **Read**.
 4. Click **Save settings** so the IP and folder are used every time (they're stored on the server).
 
-### If the page doesn't load (Rocky)
+#### If the page doesn't load (Rocky)
 
 - Check the service is running: `systemctl status zc95-web`. If it isn't, `journalctl -u zc95-web -n 50` says why.
 - Check the port is open: `firewall-cmd --list-ports` should include `8080/tcp`. If it doesn't, run
@@ -176,7 +186,7 @@ When it finishes, it prints the address, e.g. `http://192.168.0.160:8080/`.
 - If SELinux blocks it, `ausearch -m avc -ts recent` shows a denial. This is unlikely, because the service
   runs unconfined.
 
-### Updating
+#### Updating
 
 Copy the folder again and re-run the installer (steps 1 and 2). It updates the code and restarts the
 service, but keeps your settings and scripts.
@@ -231,6 +241,21 @@ python3 app.py
 ```
 
 Then browse to `http://localhost:8080/`. Settings go in `./data`, and the Scripts tab browses `./scripts`.
+
+## What's in here
+
+| Path | |
+|---|---|
+| `app.py` | The web server (FastAPI) |
+| `requirements.txt` | Python packages |
+| `static/` | The web page (`index.html`, `app.css`, `app.js`) |
+| `lib/` | `ZcAsync.py` and `WebHub.py` from the ZC95 project's remote-access code, unchanged |
+| `scripts/examples/` | Example Lua scripts, copied to the server's scripts folder on first install |
+| `deploy/install.sh` | Installer and updater; detects the Linux distro and installs what it needs |
+| `deploy/zc95-web.service` | systemd service |
+| `deploy/zc95-web.env` | Settings template (port, scripts folder, optional password) |
+| `Dockerfile`, `docker-compose.yml`, `docker/` | Run it as a Docker container instead |
+| `images/` | Screenshots for this README |
 
 ## Credits
 
