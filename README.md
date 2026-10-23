@@ -248,7 +248,7 @@ Then browse to `http://localhost:8080/`. Settings go in `./data`, and the Script
 |---|---|
 | `app.py` | The web server (FastAPI) |
 | `requirements.txt` | Python packages |
-| `static/` | The web page (`index.html`, `app.css`, `app.js`) |
+| `static/` | The web page (`index.html`, `app.css`, `app.js`, `favicon.ico`) |
 | `lib/` | `ZcAsync.py` and `WebHub.py` from the ZC95 project's remote-access code, unchanged |
 | `scripts/examples/` | Example Lua scripts, copied to the server's scripts folder on first install |
 | `deploy/install.sh` | Installer and updater; detects the Linux distro and installs what it needs |
